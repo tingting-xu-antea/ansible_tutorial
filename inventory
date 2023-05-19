@@ -1,3 +1,8 @@
+[web_servers]
 adminantea@192.168.116.128
+
+[db_servers]
 ttxlinux@192.168.116.129
+
+[file_servers]
 ttx3@192.168.116.130
