@@ -6,3 +6,6 @@ ttxlinux@192.168.116.129
 
 [file_servers]
 ttx3@192.168.116.130
+
+[workstations]
+workstation@192.168.116.131
