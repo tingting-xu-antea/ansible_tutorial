@@ -1,0 +1,8 @@
+---
+
+- name: Configure the Timezone
+  hosts: web_servers
+  become: yes
+  tasks:
+  - name: update timezone
+    shell: timedatectl set-timezone America/Chicago
