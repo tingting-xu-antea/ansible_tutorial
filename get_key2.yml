@@ -1,0 +1,75 @@
+- name: GET SSH KEY
+  hosts: all
+  #remote_user: ansible
+  gather_facts: no
+  become: yes
+  become_method: sudo
+
+  tasks:
+
+  - name: Set getent
+    getent:
+      database: passwd
+  - name: Get bash users
+    set_fact:
+      my_users: "{{ getent_passwd|
+                    dict2items|
+                    json_query('[? contains(value,`/bin/bash`)].key') }}"
+
+  - name: Get users1
+    set_fact:
+      my_users1: "{{ getent_passwd|
+                    dict2items|
+                    json_query('[].key')}}"
+  - name: Get users2
+    set_fact:
+      my_users2: "{{ getent_passwd|
+                    dict2items|
+                    json_query('[? contains(value,`/usr/sbin/nologin`)].key')}}"
+  - name: Get users3
+    set_fact:
+      my_users3: "{{ getent_passwd|
+                    dict2items|
+                    json_query('[? contains(value,`/bin/false`)].key')}}"
+  - name: Get users
+    set_fact:
+      my_users: "{{ my_users1 | difference(my_users2) | difference(my_users3)}}"
+
+  - name: Prints the users
+    debug: var=my_users
+
+  - name: Get Homepaths
+    getent:
+      database: passwd
+      key: "{{ item }}"
+    with_items: "{{ my_users }}"
+    register: managed_users_getent
+  #- name: Prints Homepaths
+  #  debug: var=managed_users_getent
+
+  - set_fact:
+      managed_users_homepaths: "{{ managed_users_homepaths | default({}) | combine({ item.item: item.ansible_facts.getent_passwd[item.item].4 }) }}"
+    with_items: "{{ managed_users_getent.results }}"
+
+  - name: Prints Homepaths
+    debug: var=managed_users_homepaths
+
+  - name: Get authorized_keys
+    shell: cat "{{ item.value }}"/.ssh/authorized_keys | cut -d' ' -f 1,3
+    with_dict: "{{ managed_users_homepaths }}"
+    register: read_key
+    ignore_errors: true
+
+  - name: manage output
+    set_fact:
+      output: "{{ output | default({}) | combine({ item.item.key: item.stdout_lines }) }}"
+    with_items: "{{ read_key.results }}"
+    ignore_errors: true
+
+  - name: Prints output
+    debug: var=output
+
+  - local_action:
+      module: copy
+      content: "{{ output }}"
+      dest: ~/output1.txt
