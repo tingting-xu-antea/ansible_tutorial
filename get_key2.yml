@@ -72,4 +72,4 @@
   - local_action:
       module: copy
       content: "{{ output }}"
-      dest: ~/output1.txt
+      dest: /home/workstation/Documents/output_all921.txt
